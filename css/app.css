@@ -1,0 +1,82 @@
+* {
+  overflow: hidden;
+}
+
+body {
+  width: 100%;
+  margin: 0;
+  background-image: url("../img/bg-1280x800.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: 75%;
+  color: white
+}
+
+.fancy-box {
+  background-color: rgba(128, 128, 128, .2);
+  border: 1px solid rgba(192, 192, 192, .2);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.navigator {
+  width: calc(100% - 6px - 8px);
+  padding: 3px;
+  margin: 2px 4px 2px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#sky-gametime-wrapper {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 800px) {
+  #sky-gametime-prefix {
+    display: none;
+  }
+}
+
+.shard-container {
+  width: 100%;
+  height: 75%;
+  margin-top: 40px;
+}
+
+.shard-slide {
+  margin: 0;
+  padding: 0;
+}
+
+.shard-tag {
+  margin: 0;
+  padding: 10px;
+  color: white;
+  width: 100%;
+  height: 100%;
+}
+
+.shard-time {
+  display: inline-block;
+  margin: 0;
+}
+
+.shard-time-disp {
+  display: inline-block;
+  margin: 0;
+  overflow-x: visible;
+  width: 500px;
+}
+
+#sky-gametime-disp {
+  text-align: center;
+  font-size: 1.2em;
+  padding: 2px 0 2px 0;
+}
