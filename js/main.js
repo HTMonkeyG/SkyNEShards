@@ -1,10 +1,18 @@
 const realmNames = ["云野", "雨林", "霞谷", "暮土", "禁阁", "N/A"]
+  , realmColor = ["#58E3F8", "#3875A9", "#ED669C", "#778804", "#4463DA"]
   , mapNames = {
     0: ["N/A", "蝴蝶平原", "仙乡", "N/A", "幽光山洞", "云顶浮石", "圣岛"],
     1: ["N/A", "荧光森林", "密林遗迹", "N/A", "大树屋", "神殿", "秘密花园"],
     2: ["N/A", "滑冰场", "滑冰场", "N/A", "圆梦村", "圆梦村", "雪隐峰"],
-    3: ["N/A", "暮土一图", "远古战场", "N/A", "黑水港湾(沉船图)", "巨兽荒原", "失落方舟"],
+    3: ["N/A", "暮土一图", "远古战场", "N/A", "黑水港湾", "巨兽荒原", "失落方舟"],
     4: ["N/A", "星光沙漠", "星光沙漠", "N/A", "星漠大船", "星漠大船", "星漠大船"]
+  }
+  , mapAliases = {
+    0: ["", "", "三塔图", "", "左侧隐藏图", "右侧隐藏图", ""],
+    1: ["", "雨林二图", "水母图", "", "", "", "老奶奶图"],
+    2: ["", "", "", "", "", "", ""],
+    3: ["", "", "", "", "沉船图", "四龙图", ""],
+    4: ["", "", "", "", "", "", ""]
   }
   , waves = [
     [0, 0, 0],
@@ -91,12 +99,18 @@ function calcShardAt(date) {
     currentShard = initSeq.black[(monthDay - 15) % 15] | initSeq.red[(monthDay - 13) % 15];
 
   currentRealm = (monthDay + 3) % 5;
-  result.strength = currentShard;
-  result.strengthString = strengthNames[currentShard];
-  result.realmString = realmNames[currentRealm];
-  result.areaString = mapNames[currentRealm][weekday];
-  result.waves = [];
   utc8DayStart = Math.floor(date.getTime() / 8.64e7) * 8.64e7 - 2.88e7;
+  result = {
+    strength: currentShard,
+    strengthString: strengthNames[currentShard],
+    realm: currentRealm,
+    realmString: realmNames[currentRealm],
+    realmHTML: `<span style="color:${realmColor[currentRealm]}">${realmNames[currentRealm]}</span>`,
+    areaString: mapNames[currentRealm][weekday],
+    areaAliasString: mapAliases[currentRealm][weekday],
+    waves: []
+  };
+
   for (var w of waves[weekday])
     result.waves.push(new Date(utc8DayStart + w * 1e4));
 
@@ -110,7 +124,7 @@ function setTitle(current) {
     , t;
 
   if (!document.hidden)
-    return title.innerText = "光遇国服碎石计时器";
+    return title.innerText = "光遇国服碎石计算器";
   if (!s.strength)
     return title.innerText = "今日无碎石事件";
 
@@ -121,7 +135,7 @@ function setTitle(current) {
       r += Math.floor(t / 3600).toString().padStart(2, '0') + "h";
       r += Math.floor(t / 60 % 60).toString().padStart(2, '0') + "m";
       r += "后结束";
-      break
+      return title.innerText = r;
     }
     if (a.getTime() > current.getTime()) {
       t = Math.floor((a.getTime() - current.getTime()) / 1000);
@@ -129,10 +143,10 @@ function setTitle(current) {
       r += Math.floor(t / 3600).toString().padStart(2, '0') + "h";
       r += Math.floor(t / 60 % 60).toString().padStart(2, '0') + "m";
       r += "后降落在" + s.realmString + ": " + s.areaString;
-      break
+      return title.innerText = r;
     }
   }
-  title.innerText = r;
+  title.innerText = "今日碎石事件已结束"
 }
 
 function setNavTime(date) {
@@ -164,6 +178,7 @@ function updateTag(tag, shardState, date) {
 
   if (!shardState.strength) {
     tag.querySelector(".shard-location-prefix").innerHTML = s;
+    tag.querySelector(".shard-location-alias").innerText = "";
     tag.querySelector(".shard-location-disp").innerText = shardState.strengthString;
     return
   }
@@ -172,8 +187,11 @@ function updateTag(tag, shardState, date) {
     ".shard-location-prefix"
   ).innerHTML = s + " " + t[shardState.strength] + " 降落于";
   tag.querySelector(
+    ".shard-location-alias"
+  ).innerText = shardState.areaAliasString.split("").join("\u3000");
+  tag.querySelector(
     ".shard-location-disp"
-  ).innerText = shardState.realmString + ": " + shardState.areaString;
+  ).innerHTML = shardState.realmHTML + ": " + shardState.areaString;
   tag.querySelector(
     ".shard-time-disp"
   ).innerText = date.toString() + (shardState.strength ? shardState.strengthString + " " : shardState.strengthString)
@@ -211,6 +229,6 @@ var slider = new KeenSlider("#slider-container", {
   setNavTime(utc8DateTime(b));
   window.setTimeout(a, 1000);
 })();
-document.getElementById("sky-gametime-wrapper").onclick = function () { slider.moveToIdx(0, 1), slider.moveToIdx(0, 1) };
+document.getElementById("sky-gametime-wrapper").onclick = function () { slider.moveToIdx(0, 1) };
 document.addEventListener("visibilitychange", () => { setTitle(new Date()) });
 slider.emit("animationEnded");
