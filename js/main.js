@@ -35,6 +35,7 @@ function formatTime(date) {
 }
 
 function utc8DateTime(date) {
+  date || (date = new Date());
   return new Date(date.getTime() + date.getTimezoneOffset() * 6e4 + 2.88e7)
 }
 
@@ -114,6 +115,14 @@ function setTitle(current) {
     return title.innerText = "今日无碎石事件";
 
   for (var a of s.waves) {
+    if (a.getTime() < current.getTime() && a.getTime() + 3.12e6 > current.getTime()) {
+      t = Math.floor((a.getTime() + 3.12e6 - current.getTime()) / 1000);
+      r += s.strengthString + "将于"
+      r += Math.floor(t / 3600).toString().padStart(2, '0') + "h";
+      r += Math.floor(t / 60 % 60).toString().padStart(2, '0') + "m";
+      r += "后结束";
+      break
+    }
     if (a.getTime() > current.getTime()) {
       t = Math.floor((a.getTime() - current.getTime()) / 1000);
       r += s.strengthString + "将于"
@@ -142,13 +151,32 @@ function setNavTime(date) {
 }
 
 function createTag() {
-
 }
 
-function updateTag(tag, shardState, date, r) {
+function updateTag(tag, shardState, date) {
+  var r = Math.ceil((date - new Date()) / 8.64e7)
+    , s = !r ? "今天" : r == -1 ? "昨天" : r == 1 ? "明天" : r < 0 ? Math.abs(r) + "天前" : r + "天后"
+    , t = [
+      null,
+      "<span style=\"color:#000;font-weight:bold\">黑石</span>",
+      "<span style=\"color:#f00;font-weight:bold\">红石</span>"
+    ];
+
+  if (!shardState.strength) {
+    tag.querySelector(".shard-location-prefix").innerHTML = s;
+    tag.querySelector(".shard-location-disp").innerText = shardState.strengthString;
+    return
+  }
+
+  tag.querySelector(
+    ".shard-location-prefix"
+  ).innerHTML = s + " " + t[shardState.strength] + " 降落于";
+  tag.querySelector(
+    ".shard-location-disp"
+  ).innerText = shardState.realmString + ": " + shardState.areaString;
   tag.querySelector(
     ".shard-time-disp"
-  ).innerText = date.toString() + (shardState.strength ? shardState.strengthString + " " + shardState.realmString + ": " + shardState.areaString : shardState.strengthString)
+  ).innerText = date.toString() + (shardState.strength ? shardState.strengthString + " " : shardState.strengthString)
 }
 
 var slider = new KeenSlider("#slider-container", {
@@ -159,8 +187,7 @@ var slider = new KeenSlider("#slider-container", {
       var r = new Date();
       if (slide.abs != 0)
         r = new Date((Math.floor(r.getTime() / 8.64e7) + slide.abs) * 8.64e7 + r.getTimezoneOffset() * 6e4);
-
-      updateTag(e.slides[e.track.absToRel(slide.abs)], calcShardAt(r), r, slide);
+      updateTag(e.slides[e.track.absToRel(slide.abs)], calcShardAt(r), r);
     })
   },
   animationEnded: f,
@@ -186,3 +213,4 @@ var slider = new KeenSlider("#slider-container", {
 })();
 document.getElementById("sky-gametime-wrapper").onclick = function () { slider.moveToIdx(0, 1), slider.moveToIdx(0, 1) };
 document.addEventListener("visibilitychange", () => { setTitle(new Date()) });
+slider.emit("animationEnded");
