@@ -1,4 +1,4 @@
-# SkyNEShard
+# SkyNEShards
 **开发中**
 
 &emsp;&emsp;一个用于计算《光·遇》中国区游戏的碎石事件的网页小程序。
