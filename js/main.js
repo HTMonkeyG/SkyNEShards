@@ -1,19 +1,28 @@
 const realmNames = ["云野", "雨林", "霞谷", "暮土", "禁阁", "N/A"]
   , realmColor = ["#58E3F8", "#3875A9", "#ED669C", "#778804", "#4463DA"]
-  , mapNames = {
-    0: ["N/A", "蝴蝶平原", "仙乡", "N/A", "幽光山洞", "云顶浮石", "圣岛"],
-    1: ["N/A", "荧光森林", "密林遗迹", "N/A", "大树屋", "神殿", "秘密花园"],
-    2: ["N/A", "滑冰场", "滑冰场", "N/A", "圆梦村", "圆梦村", "雪隐峰"],
-    3: ["N/A", "暮土一图", "远古战场", "N/A", "黑水港湾", "巨兽荒原", "失落方舟"],
-    4: ["N/A", "星光沙漠", "星光沙漠", "N/A", "星漠大船", "星漠大船", "星漠大船"]
-  }
-  , mapAliases = {
-    0: ["", "", "三塔图", "", "左侧隐藏图", "右侧隐藏图", ""],
-    1: ["", "雨林二图", "水母图", "", "", "", "老奶奶图"],
-    2: ["", "", "", "", "", "", ""],
-    3: ["", "", "", "", "沉船图", "四龙图", ""],
-    4: ["", "", "", "", "", "", ""]
-  }
+  , mapNames = [
+    ["N/A", "蝴蝶平原", "仙乡", "N/A", "幽光山洞", "云顶浮石", "圣岛"],
+    ["N/A", "荧光森林", "密林遗迹", "N/A", "大树屋", "神殿", "秘密花园"],
+    ["N/A", "滑冰场", "滑冰场", "N/A", "圆梦村", "圆梦村", "雪隐峰"],
+    ["N/A", "暮土一图", "远古战场", "N/A", "黑水港湾", "巨兽荒原", "失落方舟"],
+    ["N/A", "星光沙漠", "星光沙漠", "N/A", "星漠大船", "星漠大船", "星漠大船"]
+  ]
+  , mapAliases = [
+    ["", "", "三塔图", "", "左侧隐藏图", "右侧隐藏图", ""],
+    ["", "雨林二图", "水母图", "", "", "", "老奶奶图"],
+    ["", "", "", "", "", "", ""],
+    ["", "", "", "", "沉船图", "四龙图", ""],
+    ["", "", "", "", "", "", ""]
+  ]
+  , blackGain = 200
+  , redGain = [
+    [0, 0, 0, 0, 2, 2.5, 3.5],
+    [0, 0, 0, 0, 2.5, 3.5, 3.5],
+    [0, 0, 0, 0, 2.5, 2.5, 3.5],
+    [0, 0, 0, 0, 2, 2.5, 3.5],
+    [0, 0, 0, 0, 3.5, 3.5, 3.5]
+  ]
+  , currency = ["", "烛火", "升华蜡烛"]
   , waves = [
     [0, 0, 0],
     [3288, 5088, 6888],
@@ -108,6 +117,8 @@ function calcShardAt(date) {
     realmHTML: `<span style="color:${realmColor[currentRealm]}">${realmNames[currentRealm]}</span>`,
     areaString: mapNames[currentRealm][weekday],
     areaAliasString: mapAliases[currentRealm][weekday],
+    gainString: currency[currentShard],
+    gainAmount: !currentShard ? 0 : currentShard == 1 ? blackGain : redGain[currentRealm][weekday],
     waves: []
   };
 
@@ -168,7 +179,8 @@ function createTag() {
 }
 
 function updateTag(tag, shardState, date) {
-  var r = Math.ceil((date - new Date()) / 8.64e7)
+  var $ = tag.querySelector.bind(tag)
+    , r = Math.ceil((date - new Date()) / 8.64e7)
     , s = !r ? "今天" : r == -1 ? "昨天" : r == 1 ? "明天" : r < 0 ? Math.abs(r) + "天前" : r + "天后"
     , t = [
       null,
@@ -177,24 +189,26 @@ function updateTag(tag, shardState, date) {
     ];
 
   if (!shardState.strength) {
-    tag.querySelector(".shard-location-prefix").innerHTML = s;
-    tag.querySelector(".shard-location-alias").innerText = "";
-    tag.querySelector(".shard-location-disp").innerText = shardState.strengthString;
+    $(".shard-location-prefix").innerHTML = s;
+    $(".shard-location-alias").innerText = "";
+    $(".shard-location-disp").innerText = shardState.strengthString;
+    $(".shard-gain").innerText = "";
+    $(".shard-location").querySelector(".shard-split").style.display = "none";
+    $(".shard-timeline").classList.add("hidden");
+    $(".shard-countdown").classList.add("hidden");
+    $(".shard-tag").classList.add("shard-tag-empty");
     return
   }
 
-  tag.querySelector(
-    ".shard-location-prefix"
-  ).innerHTML = s + " " + t[shardState.strength] + " 降落于";
-  tag.querySelector(
-    ".shard-location-alias"
-  ).innerText = shardState.areaAliasString.split("").join("\u3000");
-  tag.querySelector(
-    ".shard-location-disp"
-  ).innerHTML = shardState.realmHTML + ": " + shardState.areaString;
-  tag.querySelector(
-    ".shard-time-disp"
-  ).innerText = date.toString() + (shardState.strength ? shardState.strengthString + " " : shardState.strengthString)
+  $(".shard-countdown").classList.remove("hidden");
+  $(".shard-timeline").classList.remove("hidden");
+  $(".shard-location").querySelector(".shard-split").style.display = "none";
+  $(".shard-tag").classList.remove("shard-tag-empty");
+  $(".shard-location-prefix").innerHTML = s + " " + t[shardState.strength] + " 降落于";
+  $(".shard-location-alias").innerText = shardState.areaAliasString.split("").join("\u3000");
+  $(".shard-location-disp").innerHTML = shardState.realmHTML + ": " + shardState.areaString;
+  $(".shard-gain").innerText = "预计可获取" + shardState.gainAmount + shardState.gainString;
+  $(".shard-time-disp").innerText = date.toString();
 }
 
 var slider = new KeenSlider("#slider-container", {
@@ -202,10 +216,10 @@ var slider = new KeenSlider("#slider-container", {
   loop: true,
   detailsChanged: f = function (e) {
     e.track.details.slides.map((slide) => {
-      var r = new Date();
-      if (slide.abs != 0)
-        r = new Date((Math.floor(r.getTime() / 8.64e7) + slide.abs) * 8.64e7 + r.getTimezoneOffset() * 6e4);
-      updateTag(e.slides[e.track.absToRel(slide.abs)], calcShardAt(r), r);
+      var r = new Date(Date.now() + slide.abs * 8.64e7);
+      try {
+        updateTag(e.slides[e.track.absToRel(slide.abs)], calcShardAt(r), r)
+      } catch (e) { }
     })
   },
   animationEnded: f,
