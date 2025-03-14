@@ -2,7 +2,7 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
   <link rel="stylesheet" href="./css/app.css" />
   <link rel="stylesheet" href="./css/keen-slider.min.css" />
   <title id="title">光遇国服碎石计时器</title>
@@ -20,7 +20,7 @@
   <div id="slider-container" class="keen-slider shard-container">
     <div class="keen-slider__slide shard-slide">
       <div class="shard-tag fancy-box">
-        <div class="shard-location">
+        <div class="shard-location font-dynamic">
           <p class="shard-location-prefix"></p>
           <p class="shard-location-alias"></p>
           <p class="shard-location-disp"></p>
@@ -40,7 +40,7 @@
     </div>
     <div class="keen-slider__slide shard-slide">
       <div class="shard-tag fancy-box">
-        <div class="shard-location">
+        <div class="shard-location font-dynamic">
           <p class="shard-location-prefix"></p>
           <p class="shard-location-alias"></p>
           <p class="shard-location-disp"></p>
@@ -49,6 +49,10 @@
         </div>
         <div class="shard-timeline">
           <p class="shard-time-disp"></p>
+          <div class="shard-timeline-line">
+            <div class="shard-timeline-cursor"></div>
+            <div class="shard-timeline-segment"></div>
+          </div>
         </div>
         <div class="shard-countdown">
           <div class="shard-split"></div>
@@ -59,7 +63,6 @@
       </div>
     </div>
   </div>
-  <br>
   <footer class="footer">Copyright (c) 2025 HTMonkeyG</footer>
   <script src="./js/lib/keen-slider-mod-min.js"></script>
   <script src="./js/main.js"></script>

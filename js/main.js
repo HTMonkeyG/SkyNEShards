@@ -35,7 +35,7 @@ const realmNames = ["云野", "雨林", "霞谷", "暮土", "禁阁", "N/A"]
   , strengthNames = ["无碎石事件", "黑石", "红石"]
   , lastTimeMs = 1000 * 60 * 52;
 
-var initSeqCache = new Map(), f;
+var f;
 
 function formatDate(date, type) {
   if (type == 1)
@@ -69,46 +69,25 @@ function calcShardAt(date) {
 
   var monthDay = date.getDate() - 1
     , weekday = (date.getDay() || 7) - 1
-    , initSeq = { black: [], red: [] }
-    , result = {}
-    , seqWeekday
+    , currentRealm = (monthDay + 3) % 5
+    , utc8DayStart = Math.floor(date.getTime() / 8.64e7) * 8.64e7 - 2.88e7
     , currentShard
-    , currentRealm
-    , utc8DayStart
-    , r;
+    , result;
 
-  // Get the day of the week for the first day of the month
-  seqWeekday = (weekday - monthDay) % 7;
-  seqWeekday < 0 && (seqWeekday += 7);
-  // Try to get sequence from cache
-  if (initSeqCache.has(seqWeekday))
-    initSeq = initSeqCache.get(seqWeekday);
-  else {
-    // Calculate initial sequence
-    r = seqWeekday;
-    for (var i = 0; i < 15; i++) {
-      initSeq.black.push(seqWeekday == 1 ? 1 : 0);
-      initSeq.red.push(seqWeekday == 5 ? 2 : 0);
-      seqWeekday = (seqWeekday + 1) % 7;
-    }
-    initSeqCache.set(r, initSeq);
-  }
+  currentShard = weekday == 6
+    ? 2
+    : monthDay < 15
+      ? weekday == 1
+        ? 1
+        : weekday == 5
+          ? 2
+          : 0
+      : weekday == 2
+        ? 1
+        : weekday == 4
+          ? 2
+          : 0;
 
-  // Calculate current shard state
-  if (weekday == 6)
-    // If Sunday, then must be a red shard,
-    currentShard = 2;
-  else if (monthDay < 16)
-    // Or calculate sequence shard.
-    // If month day < 16, then just apply the initial sequence.
-    currentShard = initSeq.black[monthDay] | initSeq.red[monthDay];
-  else
-    // Else remove the first two days of initial red sequence,
-    // and repeat the modified sequence.
-    currentShard = initSeq.black[(monthDay - 15) % 15] | initSeq.red[(monthDay - 13) % 15];
-
-  currentRealm = (monthDay + 3) % 5;
-  utc8DayStart = Math.floor(date.getTime() / 8.64e7) * 8.64e7 - 2.88e7;
   result = {
     strength: currentShard,
     strengthString: strengthNames[currentShard],
