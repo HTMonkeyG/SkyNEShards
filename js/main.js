@@ -28,17 +28,18 @@ const realmNames = ["云野", "雨林", "霞谷", "暮土", "禁阁", "N/A"]
     [3288, 5088, 6888],
     [3288, 5448, 7608],
     [0, 0, 0],
-    [4008, 6168, 4728],
+    [4008, 6168, 8328],
     [3648, 5088, 7968],
     [2568, 4728, 6888]
   ]
   , strengthNames = ["无碎石事件", "黑石", "红石"]
   , lastTimeMs = 1000 * 60 * 52;
 
-var f;
+var tags = new Map()
+  , f, slider;
 
-function formatDate(date, type) {
-  if (type == 1)
+function formatDate(date, short) {
+  if (short)
     return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
 }
@@ -47,20 +48,23 @@ function formatWeekDay(date) {
   return "星期" + ["一", "二", "三", "四", "五", "六", "日"][(date.getDay() || 7) - 1]
 }
 
-function formatTime(date) {
+function formatTime(date, short) {
+  if (short)
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`
 }
 
 function utc8DateTime(date) {
   date || (date = new Date());
-  return new Date(date.getTime() + date.getTimezoneOffset() * 6e4 + 2.88e7)
+  return new Date(date.getTime() + date.getTimezoneOffset() * 6e4 + 288e5)
 }
 
-function getWndSize() {
-  return [
-    window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
-    window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
-  ]
+function utc8DayStart(date) {
+  return Math.floor((date.getTime() + 288e5) / 864e5) * 864e5 - 288e5
+}
+
+function clamp(x, a, b) {
+  return x < a ? a : x > b ? b : x;
 }
 
 function calcShardAt(date) {
@@ -70,124 +74,252 @@ function calcShardAt(date) {
   var monthDay = date.getDate() - 1
     , weekday = (date.getDay() || 7) - 1
     , currentRealm = (monthDay + 3) % 5
-    , utc8DayStart = Math.floor(date.getTime() / 8.64e7) * 8.64e7 - 2.88e7
-    , currentShard
-    , result;
-
-  currentShard = weekday == 6
-    ? 2
-    : monthDay < 15
-      ? weekday == 1
-        ? 1
-        : weekday == 5
-          ? 2
-          : 0
-      : weekday == 2
-        ? 1
-        : weekday == 4
-          ? 2
-          : 0;
-
-  result = {
-    strength: currentShard,
-    strengthString: strengthNames[currentShard],
-    realm: currentRealm,
-    realmString: realmNames[currentRealm],
-    realmHTML: `<span style="color:${realmColor[currentRealm]}">${realmNames[currentRealm]}</span>`,
-    areaString: mapNames[currentRealm][weekday],
-    areaAliasString: mapAliases[currentRealm][weekday],
-    gainString: currency[currentShard],
-    gainAmount: !currentShard ? 0 : currentShard == 1 ? blackGain : redGain[currentRealm][weekday],
-    waves: []
-  };
+    , uds = utc8DayStart(date)
+    , currentShard = weekday == 6
+      ? 2
+      : monthDay < 15
+        ? weekday == 1
+          ? 1
+          : weekday == 5
+            ? 2
+            : 0
+        : weekday == 2
+          ? 1
+          : weekday == 4
+            ? 2
+            : 0
+    , result = {
+      strength: currentShard,
+      strengthString: strengthNames[currentShard],
+      realm: currentRealm,
+      realmString: realmNames[currentRealm],
+      realmHTML: `<span style="color:${realmColor[currentRealm]}">${realmNames[currentRealm]}</span>`,
+      areaString: mapNames[currentRealm][weekday],
+      areaAliasString: mapAliases[currentRealm][weekday],
+      gainString: currency[currentShard],
+      gainAmount: !currentShard ? 0 : currentShard == 1 ? blackGain : redGain[currentRealm][weekday],
+      waves: []
+    };
 
   for (var w of waves[weekday])
-    result.waves.push(new Date(utc8DayStart + w * 1e4));
+    result.waves.push(new Date(uds + w * 1e4));
 
   return result
+}
+
+function calcWave(state, date) {
+  var dt = date.getTime()
+    , diff, wt;
+
+  if (!state.waves)
+    return { state: 0 };
+  if ((diff = dt - state.waves[2].getTime() + lastTimeMs) > 0)
+    // All waves have ended before ...
+    return { state: 1, time: diff };
+  if ((diff = state.waves[0].getTime() - dt) > 0)
+    // The first wave will start after ...
+    return { state: 2, time: diff };
+
+  for (var w of state.waves) {
+    wt = w.getTime();
+    if (wt < dt && wt + lastTimeMs > dt)
+      // Current wave will end after ...
+      return {
+        state: 3,
+        time: wt + lastTimeMs - dt
+      };
+    if (wt > dt)
+      // Next wave will start after ...
+      return {
+        state: 4,
+        time: wt - dt
+      }
+  }
 }
 
 function setTitle(current) {
   var title = document.getElementById("title")
     , s = calcShardAt(current)
     , r = ""
-    , t;
+    , t, w;
 
   if (!document.hidden)
     return title.innerText = "光遇国服碎石计算器";
-  if (!s.strength)
-    return title.innerText = "今日无碎石事件";
 
-  for (var a of s.waves) {
-    if (a.getTime() < current.getTime() && a.getTime() + 3.12e6 > current.getTime()) {
-      t = Math.floor((a.getTime() + 3.12e6 - current.getTime()) / 1000);
-      r += s.strengthString + "将于"
-      r += Math.floor(t / 3600).toString().padStart(2, '0') + "h";
-      r += Math.floor(t / 60 % 60).toString().padStart(2, '0') + "m";
-      r += "后结束";
-      return title.innerText = r;
-    }
-    if (a.getTime() > current.getTime()) {
-      t = Math.floor((a.getTime() - current.getTime()) / 1000);
+  w = calcWave(s, current);
+  switch (w.state) {
+    case 0:
+      r = "今日无碎石事件";
+      break;
+    case 1:
+      r = "今日碎石事件已结束";
+      break;
+    case 2: case 4:
+      t = Math.floor(w.time / 1000);
       r += s.strengthString + "将于"
       r += Math.floor(t / 3600).toString().padStart(2, '0') + "h";
       r += Math.floor(t / 60 % 60).toString().padStart(2, '0') + "m";
       r += "后降落在" + s.realmString + ": " + s.areaString;
-      return title.innerText = r;
-    }
+      break;
+    case 3:
+      t = Math.floor(w.time / 1000);
+      r += s.strengthString + "将于"
+      r += Math.floor(t / 3600).toString().padStart(2, '0') + "h";
+      r += Math.floor(t / 60 % 60).toString().padStart(2, '0') + "m";
+      r += "后结束";
+      break;
   }
-  title.innerText = "今日碎石事件已结束"
+  title.innerText = r;
 }
 
 function setNavTime(date) {
-  var navTimeDisp = document.getElementById("sky-gametime-disp")
-    , wndSize = getWndSize()
-    , r = "";
+  var disp = document.getElementById("sky-gametime-disp")
+    , dispShort = document.getElementById("sky-gametime-disp-short");
 
-  if (wndSize[0] < 500)
-    r += formatDate(date, 1) + "\u3000";
-  else
-    r += formatDate(date) + formatWeekDay(date) + "\u3000";
-
-  r += formatTime(date);
-
-  navTimeDisp.innerText = r;
+  disp.innerText = formatDate(date) + formatWeekDay(date) + "\u3000" + formatTime(date);
+  dispShort.innerText = formatDate(date, 1) + "\u3000" + formatTime(date);
 }
 
 function createTag() {
+  var r = document.createElement("div");
+  r.classList.add("keen-slider__slide", "shard-slide");
+  r.innerHTML = '<div class="shard-tag fancy-box">\
+    <div class="shard-location font-dynamic">\
+      <p class="shard-location-prefix"></p>\
+      <p class="shard-location-alias"></p>\
+      <p class="shard-location-disp"></p>\
+      <p class="shard-gain"></p>\
+    </div>\
+    <div class="shard-timeline font-dynamic">\
+      <div class="shard-split"></div>\
+    </div>\
+    <div class="shard-countdown">\
+      <div class="shard-split"></div>\
+      <p class="shard-countdown-prefix"></p>\
+      <p class="shard-countdown-disp"></p>\
+      <p class="shard-countdown-text"></p>\
+    </div>\
+  </div>';
+  return r
+}
+
+function createTimeline(periods) {
+  var r = document.createElement("div")
+    , result = document.createElement("div")
+    , s, t, u;
+
+  r.classList.add("shard-timeline-line");
+  r.innerHTML += '<div class="shard-timeline-cursor"></div>';
+  for (var p of periods) {
+    s = clamp(p.start, 0, 1);
+    t = clamp(p.last, 0, 1 - p.start);
+    u = document.createElement("div");
+    u.classList = "shard-timeline-segment";
+    u.style.left = s * 100 + "%";
+    u.style.width = t * 100 + "%";
+    r.appendChild(u);
+
+    u = document.createElement("a");
+    u.classList = "shard-timeline-text-up";
+    u.style.left = s * 100 + "%";
+    u.innerText = p.startText;
+    r.appendChild(u);
+
+    u = document.createElement("a");
+    u.classList = "shard-timeline-text-down";
+    u.style.left = s * 100 + t * 100 + "%";
+    u.innerText = p.endText;
+    r.appendChild(u);
+  }
+
+  setTimelineCursor(r, 0);
+  result.appendChild(r);
+  result.classList = "shard-timeline-wrapper";
+
+  return result
+}
+
+function setTimelineCursor(element, rate) {
+  var c = element.querySelector(".shard-timeline-cursor");
+  if (rate < 0 || rate > 1) {
+    c.style.visibility = "hidden";
+    return
+  }
+  c.style.visibility = "inherit";
+  rate = clamp(rate, 0, 1);
+  c.style.left = `calc(${rate * 100}% - 10px)`;
+  return element
 }
 
 function updateTag(tag, shardState, date) {
   var $ = tag.querySelector.bind(tag)
-    , r = Math.ceil((date - new Date()) / 8.64e7)
-    , s = !r ? "今天" : r == -1 ? "昨天" : r == 1 ? "明天" : r < 0 ? Math.abs(r) + "天前" : r + "天后"
+    , d = Math.ceil((date - new Date()) / 864e5) || 0
+    , uds = utc8DayStart(date)
+    , s = !d ? "今天" : d == -1 ? "昨天" : d == 1 ? "明天" : d < 0 ? Math.abs(d) + "天前" : d + "天后"
     , t = [
       null,
       "<span style=\"color:#000;font-weight:bold\">黑石</span>",
       "<span style=\"color:#f00;font-weight:bold\">红石</span>"
-    ];
+    ]
+    , u = tags.get(tag)
+    , length;
+
+  if (u.diff == s)
+    return;
+  u.diff = s;
 
   if (!shardState.strength) {
+    // Hide external informations
     $(".shard-location-prefix").innerHTML = s;
     $(".shard-location-alias").innerText = "";
     $(".shard-location-disp").innerText = shardState.strengthString;
     $(".shard-gain").innerText = "";
-    $(".shard-location").querySelector(".shard-split").style.display = "none";
-    $(".shard-timeline").classList.add("hidden");
+
+    tag.querySelectorAll(":scope .shard-split").forEach(ele => ele.style.display = "none");
+    $(".shard-timeline").style.display = "none";
     $(".shard-countdown").classList.add("hidden");
     $(".shard-tag").classList.add("shard-tag-empty");
+
     return
   }
 
-  $(".shard-countdown").classList.remove("hidden");
-  $(".shard-timeline").classList.remove("hidden");
-  $(".shard-location").querySelector(".shard-split").style.display = "none";
-  $(".shard-tag").classList.remove("shard-tag-empty");
+  // Update shard location and gain
   $(".shard-location-prefix").innerHTML = s + " " + t[shardState.strength] + " 降落于";
   $(".shard-location-alias").innerText = shardState.areaAliasString.split("").join("\u3000");
   $(".shard-location-disp").innerHTML = shardState.realmHTML + ": " + shardState.areaString;
   $(".shard-gain").innerText = "预计可获取" + shardState.gainAmount + shardState.gainString;
-  $(".shard-time-disp").innerText = date.toString();
+
+  // Show external informations
+  tag.querySelectorAll(":scope .shard-split").forEach(ele => ele.style.display = "");
+  $(".shard-timeline").style.display = "";
+  $(".shard-countdown").classList.remove("hidden");
+  $(".shard-tag").classList.remove("shard-tag-empty");
+
+  // Update timeline
+  if (u.timeline)
+    $(".shard-timeline").removeChild(u.timeline);
+
+  length = shardState.waves[2] - shardState.waves[0] + lastTimeMs;
+
+  u.timeline = createTimeline(shardState.waves.map(w => {
+    return {
+      start: (w - shardState.waves[0]) / length * 0.8 + 0.1,
+      last: lastTimeMs / length,
+      startText: formatTime(w, 1),
+      endText: formatTime(new Date(-(-w) + lastTimeMs), 1)
+    }
+  }));
+  $(".shard-timeline").appendChild(u.timeline);
+  u.tick = function () {
+    setTimelineCursor(u.timeline, (Date.now() - uds) / 864e5)
+  };
+  u.tick();
+}
+
+for (var i = 0, j; i < 2; i++) {
+  j = createTag();
+  document.getElementById("slider-container").appendChild(j);
+  tags.set(j, {});
 }
 
 var slider = new KeenSlider("#slider-container", {
@@ -195,7 +327,7 @@ var slider = new KeenSlider("#slider-container", {
   loop: true,
   detailsChanged: f = function (e) {
     e.track.details.slides.map((slide) => {
-      var r = new Date(Date.now() + slide.abs * 8.64e7);
+      var r = new Date(Date.now() + slide.abs * 864e5);
       try {
         updateTag(e.slides[e.track.absToRel(slide.abs)], calcShardAt(r), r)
       } catch (e) { }
@@ -221,6 +353,8 @@ var slider = new KeenSlider("#slider-container", {
   setTitle(b);
   setNavTime(utc8DateTime(b));
   window.setTimeout(a, 1000);
+  for (var e of tags.values())
+    typeof e.tick == 'function' && e.tick()
 })();
 document.getElementById("sky-gametime-wrapper").onclick = function () { slider.moveToIdx(0, 1) };
 document.addEventListener("visibilitychange", () => { setTitle(new Date()) });

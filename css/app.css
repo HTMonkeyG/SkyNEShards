@@ -15,9 +15,9 @@ body {
   background-position: 75%;
   color: white;
   min-width: 320px;
-  min-height: 475px;
+  min-height: max(56.25vw, 475px);
   display: grid;
-  grid-template-rows: 35px auto max(40px, 5%);
+  grid-template-rows: max(35px, 5%) auto max(40px, 5%);
   grid-gap: max(40px, 5%);
 }
 
@@ -26,7 +26,7 @@ body {
 }
 
 .font-dynamic {
-  font-size: max(calc(0.7rem + 1vw), 1rem);
+  font-size: max(min(calc(0.7rem + 1.25vw), calc(0.7rem + 1.25vh)), 1rem);
 }
 
 .fancy-box {
@@ -39,21 +39,18 @@ body {
 
 .navigator {
   width: 100%;
+  height: 100%;
   padding: 3px;
   margin: 2px 4px 2px 4px;
   display: grid;
   grid-template-columns: 15% auto 15%;
-  grid-gap: auto;
-  height: 35px;
+  place-items: center;
 }
 
-#sky-gametime-wrapper {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  flex-wrap: nowrap;
-  flex-direction: row;
-  cursor: pointer;
+.sky-gametime-text {
+  text-align: center;
+  font-size: 1.2em;
+  padding: 2px 0 2px 0;
 }
 
 @media screen and (max-width: 800px) {
@@ -68,20 +65,17 @@ body {
     --fancy-border-width: 1px;
     border-radius: 15px;
   }
+}
 
-  .navigator {
-    width: calc(100% - 6px - 8px - 2px);
-    padding: 3px;
-    margin: 2px 4px 2px 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+@media screen and (min-width: 800px) {
+  .font-dynamic {
+    font-size: max(min(calc(0.5rem + 1.25vw), calc(0.5rem + 1.25vh)), 1rem);
   }
 }
 
-@media screen and (max-width: 1200px) {
+@media screen and (min-width: 1200px) {
   .font-dynamic {
-    font-size: max(calc(0.5rem + 2vw), 1rem);
+    font-size: max(min(calc(0.5rem + 1vw), calc(0.5rem + 1vh)), 1rem);
   }
 }
 
@@ -114,7 +108,8 @@ body {
 }
 
 .shard-location {
-  margin: max(15px, calc(15px + 1vw)) 0 0 0
+  margin: auto 0 auto 0;
+  position: relative;
 }
 
 .shard-location-prefix {
@@ -128,11 +123,13 @@ body {
 .shard-location-alias {
   display: inline-block;
   text-align: center;
-  font-size: 0.5em;
+  font-size: 0.65em;
   width: 100%;
   margin: 0;
   position: relative;
   top: 2px;
+  height: 0.7em;
+  overflow: visible;
 }
 
 .shard-location-disp {
@@ -175,40 +172,60 @@ body {
 .shard-countdown {
   margin-top: auto;
   width: 100%;
-  height: 100px;
+  height: 100%;
+}
+
+.shard-timeline-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  place-items: center;
 }
 
 .shard-timeline-line {
   display: inline-block;
-  width: 90%;
+  width: min(90%, 100% - 60px);
   height: 2px;
   margin: 10px 0;
   background-color: rgba(192, 192, 192, .5);
   overflow: visible;
+  position: relative;
 }
 
 .shard-timeline-cursor {
   box-sizing: content-box;
   border-top: 10px solid;
   border-bottom: 10px solid;
-  border-left: 10px solid rgba(0, 0, 0, 0);
-  border-right: 10px solid rgba(0, 0, 0, 0);
+  border-left: 6px solid rgba(0, 0, 0, 0);
+  border-right: 6px solid rgba(0, 0, 0, 0);
   padding: 0;
   margin: 0;
   width: 0;
   height: 2px;
-  position: relative;
+  position: absolute;
   top: -10px;
-  left: calc(0% - 10px);
 }
 
 .shard-timeline-segment {
   background-color: red;
   height: 100%;
-  width: 3.61%;
-  position: relative;
-  top: -22px;
-  left: 20%;
+  position: absolute;
+}
+
+.shard-timeline-text-up {
+  font-size: 1em;
+  overflow: visible;
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 10px));
+}
+
+.shard-timeline-text-down {
+  font-size: 1em;
+  overflow: visible;
+  position: absolute;
+  transform: translate(-50%, 10px);
 }
 
 .footer {
@@ -224,8 +241,29 @@ body {
   padding: 8px;
 }
 
+#sky-gametime-wrapper {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  cursor: pointer;
+}
+
+#sky-gametime-disp-short {
+  display: none;
+}
+
 #sky-gametime-disp {
-  text-align: center;
-  font-size: 1.2em;
-  padding: 2px 0 2px 0;
+  display: inline-block;
+}
+
+@media screen and (max-width: 600px) {
+  #sky-gametime-disp-short {
+    display: inline-block;
+  }
+
+  #sky-gametime-disp {
+    display: none;
+  }
 }
