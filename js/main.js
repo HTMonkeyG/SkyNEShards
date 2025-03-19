@@ -120,7 +120,7 @@ function calcWave(state, date) {
 
   if (!state.waves)
     return { state: 0 };
-  if ((diff = dt - state.waves[2].getTime() + lastTimeMs) > 0)
+  if ((diff = dt - state.waves[2].getTime() - lastTimeMs) > 0)
     // All waves have ended before ...
     return { state: 1, time: diff };
   if ((diff = state.waves[0].getTime() - dt) > 0)
