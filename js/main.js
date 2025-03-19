@@ -54,6 +54,11 @@ function formatTime(date, short) {
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`
 }
 
+function formatTimeMs(t) {
+  t /= 1000;
+  return `${Math.floor(t / 3600).toString().padStart(2, '0')}:${Math.floor(t / 60 % 60).toString().padStart(2, '0')}:${Math.floor(t % 60).toString().padStart(2, '0')}`;
+}
+
 function utc8DateTime(date) {
   date || (date = new Date());
   return new Date(date.getTime() + date.getTimezoneOffset() * 6e4 + 288e5)
@@ -98,11 +103,13 @@ function calcShardAt(date) {
       areaAliasString: mapAliases[currentRealm][weekday],
       gainString: currency[currentShard],
       gainAmount: !currentShard ? 0 : currentShard == 1 ? blackGain : redGain[currentRealm][weekday],
-      waves: []
+      waves: [],
+      endTime: 0
     };
 
   for (var w of waves[weekday])
     result.waves.push(new Date(uds + w * 1e4));
+  result.endTime = result.waves[2].getTime() + lastTimeMs;
 
   return result
 }
@@ -195,15 +202,23 @@ function createTag() {
     </div>\
     <div class="shard-countdown">\
       <div class="shard-split"></div>\
-      <p class="shard-countdown-prefix"></p>\
-      <p class="shard-countdown-disp"></p>\
-      <p class="shard-countdown-text"></p>\
+      <div class="shard-countdown-container font-dynamic">\
+        <p class="shard-countdown-prefix"></p>\
+        <p class="shard-countdown-disp"></p>\
+        <p class="shard-countdown-text"></p>\
+      </div>\
     </div>\
   </div>';
   return r
 }
 
 function createTimeline(periods) {
+  function g(e, c) {
+    var r = document.createElement(e);
+    r.classList = c;
+    return r
+  }
+
   var r = document.createElement("div")
     , result = document.createElement("div")
     , s, t, u;
@@ -213,22 +228,27 @@ function createTimeline(periods) {
   for (var p of periods) {
     s = clamp(p.start, 0, 1);
     t = clamp(p.last, 0, 1 - p.start);
-    u = document.createElement("div");
-    u.classList = "shard-timeline-segment";
+    u = g("div", "shard-timeline-segment");
     u.style.left = s * 100 + "%";
     u.style.width = t * 100 + "%";
     r.appendChild(u);
 
-    u = document.createElement("a");
-    u.classList = "shard-timeline-text-up";
+    u = g("a", "shard-timeline-text-up");
     u.style.left = s * 100 + "%";
     u.innerText = p.startText;
     r.appendChild(u);
 
-    u = document.createElement("a");
-    u.classList = "shard-timeline-text-down";
+    u = g("a", "shard-timeline-mark-up");
+    u.style.left = `calc(${s * 100}% - 4px)`;
+    r.appendChild(u);
+
+    u = g("a", "shard-timeline-text-down");
     u.style.left = s * 100 + t * 100 + "%";
     u.innerText = p.endText;
+    r.appendChild(u);
+
+    u = g("a", "shard-timeline-mark-down");
+    u.style.left = `calc(${s * 100 + t * 100}% - 4px)`;
     r.appendChild(u);
   }
 
@@ -311,7 +331,39 @@ function updateTag(tag, shardState, date) {
   }));
   $(".shard-timeline").appendChild(u.timeline);
   u.tick = function () {
-    setTimelineCursor(u.timeline, (Date.now() - uds) / 864e5)
+    // Update timeline
+    var r, s, t = Date.now(), w;
+    if (t < shardState.waves[0])
+      setTimelineCursor(u.timeline, (shardState.waves[0] - t) / (shardState.waves[0] - uds) * 0.1);
+    else if (t > shardState.endTime)
+      setTimelineCursor(u.timeline, (shardState.endTime - t) / (uds + 864e5 - shardState.endTime) * 0.1);
+    else
+      setTimelineCursor(u.timeline, (t - shardState.waves[0]) / length * 0.8 + 0.1);
+
+    // Update countdown
+    w = calcWave(shardState, new Date());
+    switch (w.state) {
+      case 1:
+        $(".shard-countdown-prefix").innerText = "所有碎石事件已在";
+        $(".shard-countdown-disp").innerText = formatTimeMs(w.time);
+        $(".shard-countdown-text").innerText = "前结束";
+        break;
+      case 2:
+        $(".shard-countdown-prefix").innerText = "第一波碎石事件将于";
+        $(".shard-countdown-disp").innerText = formatTimeMs(w.time);
+        $(".shard-countdown-text").innerText = "后开始";
+        break;
+      case 4:
+        $(".shard-countdown-prefix").innerText = "下一波碎石事件将于";
+        $(".shard-countdown-disp").innerText = formatTimeMs(w.time);
+        $(".shard-countdown-text").innerText = "后开始";
+        break;
+      case 3:
+        $(".shard-countdown-prefix").innerText = "当前碎石事件将于";
+        $(".shard-countdown-disp").innerText = formatTimeMs(w.time);
+        $(".shard-countdown-text").innerText = "后结束";
+        break;
+    }
   };
   u.tick();
 }
@@ -326,6 +378,7 @@ var slider = new KeenSlider("#slider-container", {
   initial: 0,
   loop: true,
   detailsChanged: f = function (e) {
+    document.getElementById("goto").style.opacity = !e.track.details.abs ? 0 : 100;
     e.track.details.slides.map((slide) => {
       var r = new Date(Date.now() + slide.abs * 864e5);
       try {
@@ -356,6 +409,11 @@ var slider = new KeenSlider("#slider-container", {
   for (var e of tags.values())
     typeof e.tick == 'function' && e.tick()
 })();
-document.getElementById("sky-gametime-wrapper").onclick = function () { slider.moveToIdx(0, 1) };
+document.getElementById("sky-gametime-wrapper").onclick
+  = document.getElementById("goto").onclick
+  = function (e) {
+    e.preventDefault();
+    slider.moveToIdx(0, 1)
+  };
 document.addEventListener("visibilitychange", () => { setTitle(new Date()) });
 slider.emit("animationEnded");

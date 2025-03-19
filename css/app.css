@@ -8,7 +8,7 @@ body {
   width: 100%;
   height: 100%;
   margin: 0;
-  background-image: url("../img/bg-1280x800.jpg");
+  background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15)), url("../img/bg-1280x800.jpg");
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
@@ -59,10 +59,7 @@ body {
   }
 
   .fancy-box {
-    width: calc(100% - 2px);
-    height: calc();
     border: 1px solid rgba(192, 192, 192, .2);
-    --fancy-border-width: 1px;
     border-radius: 15px;
   }
 }
@@ -126,9 +123,7 @@ body {
   font-size: 0.65em;
   width: 100%;
   margin: 0;
-  position: relative;
-  top: 2px;
-  height: 0.7em;
+  height: 0;
   overflow: visible;
 }
 
@@ -137,7 +132,7 @@ body {
   text-align: center;
   font-size: 2em;
   width: 100%;
-  margin: 0;
+  margin: 8px 0 0 0;
   font-weight: bold;
 }
 
@@ -169,12 +164,6 @@ body {
   width: 500px;
 }
 
-.shard-countdown {
-  margin-top: auto;
-  width: 100%;
-  height: 100%;
-}
-
 .shard-timeline-wrapper {
   width: 100%;
   height: 100%;
@@ -196,16 +185,16 @@ body {
 
 .shard-timeline-cursor {
   box-sizing: content-box;
-  border-top: 10px solid;
-  border-bottom: 10px solid;
-  border-left: 6px solid rgba(0, 0, 0, 0);
-  border-right: 6px solid rgba(0, 0, 0, 0);
+  border-style: solid;
+  border-width: 10px 6px;
+  border-color: rgba(255, 255, 255, 0.75) rgba(0, 0, 0, 0);
   padding: 0;
   margin: 0;
   width: 0;
   height: 2px;
   position: absolute;
   top: -10px;
+  z-index: 999
 }
 
 .shard-timeline-segment {
@@ -226,6 +215,63 @@ body {
   overflow: visible;
   position: absolute;
   transform: translate(-50%, 10px);
+}
+
+.shard-timeline-mark-up {
+  box-sizing: content-box;
+  border-style: solid;
+  border-width: 4px;
+  border-color: #f00 rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) rgba(0, 0, 0, 0);
+  padding: 0;
+  margin: 0;
+  width: 0;
+  height: 2px;
+  position: absolute;
+  top: -6px;
+}
+
+.shard-timeline-mark-down {
+  box-sizing: content-box;
+  border-style: solid;
+  border-width: 4px;
+  border-color: rgba(0, 0, 0, 0) rgba(0, 0, 0, 0) #f00 rgba(0, 0, 0, 0);
+  padding: 0;
+  margin: 0;
+  width: 0;
+  height: 2px;
+  position: absolute;
+  top: -2px;
+}
+
+.shard-countdown {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  margin: 0;
+}
+
+.shard-countdown-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.shard-countdown-prefix {
+  margin: 0;
+  font-size: 0.8em;
+}
+
+.shard-countdown-disp {
+  margin: 0;
+  font-size: 2.5em;
+  font-family: monospace;
+}
+
+.shard-countdown-text {
+  margin: 0;
+  font-size: 0.8em;
 }
 
 .footer {
@@ -256,6 +302,25 @@ body {
 
 #sky-gametime-disp {
   display: inline-block;
+}
+
+#goto {
+  position: fixed;
+  right: 8%;
+  bottom: 15%;
+  border-radius: 25px;
+  border: 0px solid rgba(0, 0, 0, 0);
+  box-shadow: 1px 1px 4px rgba(21, 181, 234, .2);
+  z-index: 999;
+  transition: opacity 0.2s ease-out;
+}
+
+#goto:hover #goto-bg {
+  fill: rgba(62, 194, 238, .3)
+}
+
+#goto:active {
+  transform: translate(1px, 1px);
 }
 
 @media screen and (max-width: 600px) {
