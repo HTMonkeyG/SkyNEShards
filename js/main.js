@@ -118,7 +118,7 @@ function calcWave(state, date) {
   var dt = date.getTime()
     , diff, wt;
 
-  if (!state.waves)
+  if (!state.strength)
     return { state: 0 };
   if ((diff = dt - state.waves[2].getTime() - lastTimeMs) > 0)
     // All waves have ended before ...
@@ -190,25 +190,7 @@ function setNavTime(date) {
 function createTag() {
   var r = document.createElement("div");
   r.classList.add("keen-slider__slide", "shard-slide");
-  r.innerHTML = '<div class="shard-tag fancy-box">\
-    <div class="shard-location font-dynamic">\
-      <p class="shard-location-prefix"></p>\
-      <p class="shard-location-alias"></p>\
-      <p class="shard-location-disp"></p>\
-      <p class="shard-gain"></p>\
-    </div>\
-    <div class="shard-timeline font-dynamic">\
-      <div class="shard-split"></div>\
-    </div>\
-    <div class="shard-countdown">\
-      <div class="shard-split"></div>\
-      <div class="shard-countdown-container font-dynamic">\
-        <p class="shard-countdown-prefix"></p>\
-        <p class="shard-countdown-disp"></p>\
-        <p class="shard-countdown-text"></p>\
-      </div>\
-    </div>\
-  </div>';
+  r.innerHTML = '<div class="shard-tag fancy-box"><div class="shard-location font-dynamic"><p class="shard-location-prefix"></p><p class="shard-location-alias"></p><p class="shard-location-disp"></p><p class="shard-gain"></p></div><div class="shard-timeline font-dynamic"><div class="shard-split"></div></div><div class="shard-countdown"><div class="shard-split"></div><div class="shard-countdown-container font-dynamic"><p class="shard-countdown-prefix"></p><p class="shard-countdown-disp"></p><p class="shard-countdown-text"></p></div></div></div>';
   return r
 }
 
