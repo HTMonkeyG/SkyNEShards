@@ -332,8 +332,10 @@ function updateTag(tag, shardState, date) {
   $(".shard-timeline").appendChild(u.timeline);
   u.tick = function () {
     // Update timeline
-    var r, s, t = Date.now(), w;
-    if (t < shardState.waves[0])
+    var t = Date.now(), w;
+    if (t < uds || t > uds + 864e5)
+      setTimelineCursor(u.timeline, -1);
+    else if (t < shardState.waves[0])
       setTimelineCursor(u.timeline, (shardState.waves[0] - t) / (shardState.waves[0] - uds) * 0.1);
     else if (t > shardState.endTime)
       setTimelineCursor(u.timeline, (shardState.endTime - t) / (uds + 864e5 - shardState.endTime) * 0.1);
