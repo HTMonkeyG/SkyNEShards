@@ -15,7 +15,7 @@ body {
   background-position: 75%;
   color: white;
   min-width: 320px;
-  min-height: max(56.25vw, 475px);
+  min-height: max(50vw, 475px);
   display: grid;
   grid-template-rows: max(35px, 5%) auto max(40px, 5%);
   grid-gap: max(40px, 5%);
@@ -227,7 +227,7 @@ body {
   width: 0;
   height: 2px;
   position: absolute;
-  top: -6px;
+  top: -8px;
 }
 
 .shard-timeline-mark-down {
@@ -240,7 +240,7 @@ body {
   width: 0;
   height: 2px;
   position: absolute;
-  top: -2px;
+  top: 0px;
 }
 
 .shard-countdown {
