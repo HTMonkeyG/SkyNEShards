@@ -249,7 +249,7 @@ function setTimelineCursor(element, rate) {
   }
   c.style.visibility = "inherit";
   rate = clamp(rate, 0, 1);
-  c.style.left = `calc(${rate * 100}% - 10px)`;
+  c.style.left = `calc(${rate * 100}% - 6px)`;
   return element
 }
 
